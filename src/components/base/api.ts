@@ -5,6 +5,11 @@ export type ApiListResponse<Type> = {
 
 export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
 
+export interface IApi<Type> {
+    get(uri: string): Type;
+    post(uri: string, data: object, method: 'POST'): Type;
+}
+
 export class Api {
     readonly baseUrl: string;
     protected options: RequestInit;
