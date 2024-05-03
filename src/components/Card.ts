@@ -15,7 +15,6 @@ export type card = {
 }
 
 export interface IViewCard extends EventEmitter {
-  // id: string;
   cardElement: HTMLElement;
   cardCategory: HTMLElement;
   cardButton?: HTMLButtonElement;

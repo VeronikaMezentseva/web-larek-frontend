@@ -2,12 +2,6 @@
 import { card } from "./Card";
 import { EventEmitter } from "./base/events";
 
-type basketModel = {
-  index: number;
-  title: string;
-  price: number;
-}
-
 export interface IBasket extends EventEmitter {
   basketElement: HTMLElement;
   basketTotalPrice: HTMLElement;
@@ -63,7 +57,6 @@ export interface IBasketItem extends EventEmitter {
   basketItemPrice: HTMLElement;
   basketItemDeleteButton: HTMLButtonElement;
   itemId: string;
-  allItems: HTMLElement;
   render(card: card, cardsList: card[]): HTMLElement;
 }
 
@@ -75,7 +68,6 @@ export class BasketItem extends EventEmitter implements IBasketItem {
   basketItemPrice: HTMLElement;
   basketItemDeleteButton: HTMLButtonElement;
   itemId: string;
-  allItems: HTMLElement;
 
   constructor(template: HTMLTemplateElement) {
     super();

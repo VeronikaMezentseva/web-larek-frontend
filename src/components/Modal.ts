@@ -1,5 +1,3 @@
-import { CDN_URL } from "../utils/constants";
-import { card } from "./Card";
 import { EventEmitter } from "./base/events";
 
 export interface IModal {

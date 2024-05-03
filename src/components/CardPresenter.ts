@@ -1,11 +1,9 @@
 import { Card, IViewCard, card, cardList } from "./Card";
 import { API_URL } from "../utils/constants";
-import { Api, IApi } from "./base/api";
+import { Api } from "./base/api";
 import { IModal, Modal } from "./Modal";
 import { Basket, BasketItem, BasketPage, IBasket, IBasketItem, IBasketPage } from "./Basket";
 import { Form, FormContacts, IForm, IFormContacts, ISuccsess, IUserOption, Succsess, UserOptions } from "./Form";
-import { IPage, Page } from "./Page";
-import { AppState, IAppState } from "./AppState";
 
 
 export class CardPresenter {
@@ -17,7 +15,6 @@ export class CardPresenter {
   contactsTemplate: HTMLTemplateElement;
   formTemplate: HTMLTemplateElement;
 
-  page: IPage;
   modal: IModal;
   form: IForm;
   formContacts: IFormContacts;
@@ -37,7 +34,6 @@ export class CardPresenter {
   contentContainer: HTMLElement;
   modalContainer: HTMLElement;
 
-  appState: IAppState;
   cardList: card[];
   addedCardList: card[];
 
@@ -56,7 +52,6 @@ export class CardPresenter {
     this.contentContainer = document.querySelector('.gallery');
     this.modalContainer = document.querySelector('#modal-container');
 
-    this.appState = new AppState();
     this.cardList = [];
     this.addedCardList = [];
   
@@ -67,7 +62,6 @@ export class CardPresenter {
   }
 
   init() {
-    this.page = new Page();
     this.modal = new Modal(this.modalContainer);
     this.userOptions = new UserOptions();
 
@@ -91,7 +85,10 @@ export class CardPresenter {
 
   openCard(card: card) {
     this.cardPreviewElement = new Card(this.cardPreviewTemplate);
-    this.cardPreviewElement.on('basket:cardAdded', () => this.addCardToBasket(card));
+    this.cardPreviewElement.on('basket:cardAdded', () => {
+      this.addCardToBasket(card);
+      this.modal.closeModal();
+    });
     this.modal.content = this.cardPreviewElement.render(card);
     this.modal.openModal();
   }
