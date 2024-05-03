@@ -1,6 +1,6 @@
 import { EventEmitter } from "./base/events";
 
-export interface IForm extends EventEmitter {
+export interface IFormAddress extends EventEmitter {
   formElement: HTMLFormElement;
   form: HTMLFormElement;
   onlineButton: HTMLButtonElement;
@@ -10,7 +10,7 @@ export interface IForm extends EventEmitter {
   render(): HTMLElement;
 }
 
-export class Form extends EventEmitter implements IForm {
+export class FormAddress extends EventEmitter implements IFormAddress {
   formElement: HTMLFormElement;
   form: HTMLFormElement;
   onlineButton: HTMLButtonElement;

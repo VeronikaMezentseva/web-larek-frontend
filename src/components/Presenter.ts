@@ -3,10 +3,10 @@ import { API_URL } from "../utils/constants";
 import { Api } from "./base/api";
 import { IModal, Modal } from "./Modal";
 import { Basket, BasketItem, BasketPage, IBasket, IBasketItem, IBasketPage } from "./Basket";
-import { Form, FormContacts, IForm, IFormContacts, ISuccsess, IUserOption, Succsess, UserOptions } from "./Form";
+import { FormAddress, FormContacts, IFormAddress, IFormContacts, ISuccsess, IUserOption, Succsess, UserOptions } from "./Form";
 
 
-export class CardPresenter {
+export class Presenter {
   cardTemplate: HTMLTemplateElement;
   cardPreviewTemplate: HTMLTemplateElement;
   basketTemplate: HTMLTemplateElement;
@@ -16,7 +16,7 @@ export class CardPresenter {
   formTemplate: HTMLTemplateElement;
 
   modal: IModal;
-  form: IForm;
+  form: IFormAddress;
   formContacts: IFormContacts;
   succsess: ISuccsess;
   userOptions: IUserOption;
@@ -26,10 +26,6 @@ export class CardPresenter {
   basketPage: IBasketPage;
   basketItemElement: IBasketItem;
   basketElement: IBasket;
-
-  succsessElement: HTMLElement;
-  contactsElement: HTMLElement;
-  formElement: HTMLElement;
 
   contentContainer: HTMLElement;
   modalContainer: HTMLElement;
@@ -133,7 +129,7 @@ export class CardPresenter {
   }
 
   openForm() {
-    this.form = new Form(this.formTemplate);
+    this.form = new FormAddress(this.formTemplate);
     this.modal.content = this.form.render();
     this.form.on('user:onlineSelected', (data: {value: HTMLElement, button: HTMLButtonElement}) => this.handlePaymentOption(data));
     this.form.on('user:offlineSelected', (data: {value: HTMLElement, button: HTMLButtonElement}) => this.handlePaymentOption(data));

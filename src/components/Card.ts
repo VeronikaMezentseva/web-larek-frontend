@@ -58,14 +58,6 @@ export class Card extends EventEmitter implements IViewCard {
     
   }
 
-  setClickHandler(handleClick: CallableFunction) {
-    this.cardButton.addEventListener('click', () => handleClick());
-  }
-
-  setAddCardHandler(handleAddCard: CallableFunction) {
-    this.cardAddButton.addEventListener('click', () => handleAddCard());
-  }
-
   render(card: card) {
     this.cardCategory.textContent = card.category;
     this.cardTitle.textContent = card.title;

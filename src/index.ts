@@ -1,5 +1,5 @@
 import './scss/styles.scss';
-import { CardPresenter } from './components/CardPresenter';
+import { Presenter } from './components/Presenter';
 
-const presenter = new CardPresenter();
+const presenter = new Presenter();
 presenter.init();
