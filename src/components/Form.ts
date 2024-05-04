@@ -1,16 +1,8 @@
+import { IFormAddress, IFormContacts, ISuccsess } from "../types";
 import { EventEmitter } from "./base/events";
 
-export interface IFormAddress extends EventEmitter {
-  formElement: HTMLFormElement;
-  form: HTMLFormElement;
-  onlineButton: HTMLButtonElement;
-  offlineButton: HTMLButtonElement;
-  inputAddres: HTMLInputElement;
-  submitButton: HTMLButtonElement;
-  render(): HTMLElement;
-}
-
-export class FormAddress extends EventEmitter implements IFormAddress {
+export class FormAddress implements IFormAddress {
+  eventEmitter: EventEmitter
   formElement: HTMLFormElement;
   form: HTMLFormElement;
   onlineButton: HTMLButtonElement;
@@ -19,10 +11,10 @@ export class FormAddress extends EventEmitter implements IFormAddress {
   submitButton: HTMLButtonElement;
   error: HTMLElement;
 
-  constructor(template: HTMLTemplateElement) {
-    super();
-    this.formElement = template.content.cloneNode(true) as HTMLFormElement;
-    this.form = this.formElement.querySelector('.form');
+  constructor(template: HTMLTemplateElement, eventEmitter: EventEmitter) {
+    this.eventEmitter = eventEmitter;
+    this.formElement = template.content.querySelector('.form').cloneNode(true) as HTMLFormElement;
+    this.form = this.formElement;
     this.onlineButton = this.form.elements.namedItem('card') as HTMLButtonElement;
     this.offlineButton = this.form.elements.namedItem('cash') as HTMLButtonElement;
     this.inputAddres = this.form.elements.namedItem('address') as HTMLInputElement;
@@ -31,19 +23,19 @@ export class FormAddress extends EventEmitter implements IFormAddress {
 
     this.onlineButton.addEventListener('click', (evt) => {
       this.activateOnlineButton();
-      this.emit('user:onlineSelected', {value: evt.target, button: this.submitButton});
+      this.eventEmitter.emit('user:onlineSelected', {value: evt.target, button: this.submitButton});
     });
     this.offlineButton.addEventListener('click', (evt) => {
       this.activateOfflineButton();
-      this.emit('user:offlineSelected', {value: evt.target, button: this.submitButton});
+      this.eventEmitter.emit('user:offlineSelected', {value: evt.target, button: this.submitButton});
     });
 
     this.inputAddres.addEventListener('input', (evt) => {
-      this.emit('user:inputAddres', {value: evt.target, button: this.submitButton, error: this.error});
+      this.eventEmitter.emit('user:inputAddres', {value: evt.target, button: this.submitButton, error: this.error});
     });
     this.form.addEventListener('submit', (evt) => {
       evt.preventDefault();
-      this.emit('user:submitForm');
+      this.eventEmitter.emit('user:submitForm');
     })
   }
 
@@ -60,67 +52,17 @@ export class FormAddress extends EventEmitter implements IFormAddress {
     this.offlineButton.classList.add('button_alt-active');
     this.onlineButton.classList.remove('button_alt-active');
   }
-}
-
-export interface IUserOption {
-  _paymentMethod: 'card' | 'cash' | null;
-  _addres: string;
-  _email: string;
-  _phone: string;
-  paymentMethod: 'card' | 'cash' | null;
-  address: string;
-  email: string;
-  phone: string;
-  resetFields(): void;
-}
-
-export class UserOptions implements IUserOption {
-  _paymentMethod: 'card' | 'cash' | null;
-  _addres: string;
-  _email: string;
-  _phone: string;
-
-  constructor() {
-    this._paymentMethod = null;
-    this._addres = '';
-    this._email = '';
-    this._phone = '';
-  };
-
-  set paymentMethod(value: 'card' | 'cash' | null) {
-    this._paymentMethod = value;
-  }
-
-  set address(value: string) {
-    this._addres = value;
-  }
-
-  set email(value: string) {
-    this._email = value;
-  }
-
-  set phone(value: string) {
-    this._phone = value;
-  }
 
   resetFields() {
-    this._paymentMethod = null;
-    this._addres = '';
-    this._email = '';
-    this._phone = '';
+    this.offlineButton.classList.remove('button_alt-active');
+    this.onlineButton.classList.remove('button_alt-active');
+    this.submitButton.disabled = true;
+    this.inputAddres.value = '';
   }
 }
 
-export interface IFormContacts extends EventEmitter {
-  templateForm: HTMLFormElement;
-  form: HTMLFormElement;
-  emailInput: HTMLInputElement;
-  phoneInput: HTMLInputElement;
-  submitButton: HTMLButtonElement;
-  render(): HTMLElement;
-}
-
-export class FormContacts extends EventEmitter implements IFormContacts {
+export class FormContacts implements IFormContacts {
+  eventEmitter: EventEmitter;
   templateForm: HTMLFormElement;
   form: HTMLFormElement;
   emailInput: HTMLInputElement;
@@ -128,45 +70,46 @@ export class FormContacts extends EventEmitter implements IFormContacts {
   submitButton: HTMLButtonElement;
   error: HTMLElement;
 
-  constructor (template: HTMLTemplateElement) {
-    super();
-    this.templateForm = template.content.cloneNode(true) as HTMLFormElement;
-    this.form = this.templateForm.querySelector('.form');
+  constructor (template: HTMLTemplateElement, eventEmitter: EventEmitter) {
+    this.eventEmitter = eventEmitter;
+    this.templateForm = template.content.querySelector('.form').cloneNode(true) as HTMLFormElement;
+    this.form = this.templateForm;
     this.emailInput = this.form.elements.namedItem('email') as HTMLInputElement;
     this.phoneInput = this.form.elements.namedItem('phone') as HTMLInputElement;
     this.submitButton = this.templateForm.querySelector('.button');
     this.error = this.templateForm.querySelector('.form__errors');
 
-    this.emailInput.addEventListener('input', (evt) => this.emit('user:emailInput', {value: evt.target, button: this.submitButton, error: this.error}));
-    this.phoneInput.addEventListener('input', (evt) => this.emit('user:phoneInput', {value: evt.target, button: this.submitButton, error: this.error}));
+    this.emailInput.addEventListener('input', (evt) => this.eventEmitter.emit('user:emailInput', {value: evt.target, button: this.submitButton, error: this.error}));
+    this.phoneInput.addEventListener('input', (evt) => this.eventEmitter.emit('user:phoneInput', {value: evt.target, button: this.submitButton, error: this.error}));
     this.form.addEventListener('submit', (evt) => {
       evt.preventDefault();
-      this.emit('user:contactsFormSubmit');
+      this.eventEmitter.emit('user:contactsFormSubmit');
     })
   }
 
   render() {
     return this.templateForm;
   }
+
+  resetFields() {
+    this.submitButton.disabled = true;
+    this.emailInput.value = '';
+    this.phoneInput.value = '';
+  }
 }
 
-export interface ISuccsess extends EventEmitter {
-  element: HTMLElement;
-  render(): HTMLElement;
-  setDescription(value: string): void;
-}
-
-export class Succsess extends EventEmitter implements ISuccsess {
+export class Succsess implements ISuccsess {
+  eventEmitter: EventEmitter;
   element: HTMLElement;
   orderDescription: HTMLElement;
   button: HTMLButtonElement;
 
-  constructor(template: HTMLTemplateElement) {
-    super();
-    this.element = template.content.cloneNode(true) as HTMLFormElement;
+  constructor(template: HTMLTemplateElement, eventEmitter: EventEmitter) {
+    this.eventEmitter = eventEmitter;
+    this.element = template.content.querySelector('.order-success').cloneNode(true) as HTMLFormElement;
     this.orderDescription = this.element.querySelector('.order-success__description');
     this.button = this.element.querySelector('.order-success__close');
-    this.button.addEventListener('click', () => this.emit('succsess:close'));
+    this.button.addEventListener('click', () => this.eventEmitter.emit('succsess:close'));
   }
 
   setDescription(value: string) {

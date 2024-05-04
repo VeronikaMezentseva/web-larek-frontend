@@ -1,33 +1,12 @@
+import { CardModel } from './CardModel';
+import { IViewCard } from '../types';
 import { CDN_URL } from '../utils/constants';
 import { EventEmitter } from './base/events';
 
-export interface cardList {
-  items: card[];
-}
+export class Card implements IViewCard {
 
-export type card = {
-  id: string;
-  description: string;
-  image: string;
-  title: string;
-  category: CardCategory;
-  price: number | null;
-}
-
-export interface IViewCard extends EventEmitter {
-  cardElement: HTMLElement;
-  cardCategory: HTMLElement;
-  cardButton?: HTMLButtonElement;
-  cardTitle: HTMLElement;
-  cardImage: HTMLImageElement;
-  cardPrice: HTMLElement;
-  render(card: card): HTMLElement;
-  cardDescription?: HTMLElement;
-  cardAddButton?: HTMLButtonElement;
-}
-
-export class Card extends EventEmitter implements IViewCard {
-
+  cardSource: CardModel;
+  eventEmitter: EventEmitter;
   cardElement: HTMLElement;
   cardButton?: HTMLButtonElement;
   cardCategory: HTMLElement;
@@ -37,8 +16,9 @@ export class Card extends EventEmitter implements IViewCard {
   cardDescription?: HTMLElement;
   cardAddButton?: HTMLButtonElement;
 
-  constructor(template: HTMLTemplateElement) {
-    super();
+  constructor(template: HTMLTemplateElement, card: CardModel, eventEmitter: EventEmitter) {
+    this.cardSource = card;
+    this.eventEmitter = eventEmitter;
     this.cardElement = template.content.cloneNode(true) as HTMLElement;
     this.cardCategory = this.cardElement.querySelector('.card__category');
     this.cardTitle = this.cardElement.querySelector('.card__title');
@@ -49,16 +29,17 @@ export class Card extends EventEmitter implements IViewCard {
     }
     if (this.cardElement.querySelector('.card__button')) {
       this.cardAddButton = this.cardElement.querySelector('.card__button');
-      this.cardAddButton.addEventListener('click', () => this.emit('basket:cardAdded'));
+      this.cardAddButton.addEventListener('click', () => this.eventEmitter.emit('basket:cardAdded', {data: this.cardSource}));
     }
     if (this.cardElement.querySelector('.gallery__item')) {
       this.cardButton = this.cardElement.querySelector('.gallery__item');
-      this.cardButton.addEventListener('click', () => this.emit('card:open'));
+      this.cardButton.addEventListener('click', () => this.eventEmitter.emit('card:open', {data: this.cardSource}));
     }
+    this.render(this.cardSource);
     
   }
 
-  render(card: card) {
+  render(card: CardModel) {
     this.cardCategory.textContent = card.category;
     this.cardTitle.textContent = card.title;
     this.cardImage.src = `${CDN_URL + card.image}`;
@@ -74,10 +55,4 @@ export class Card extends EventEmitter implements IViewCard {
   }
 }
 
-enum CardCategory {
-  SOFT_SKILL = 'софт-скил',
-  OTHER = 'другое',
-  EXTRA = 'дополнительное',
-  BUTTON = 'кнопка',
-  HARD_SKILL = 'хард-скил'
-}
+export { CardModel };

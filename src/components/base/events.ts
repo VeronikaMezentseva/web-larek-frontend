@@ -2,7 +2,7 @@
 // Зато когда захотите поменять это достаточно сделать в одном месте
 type EventName = string | RegExp;
 type Subscriber = CallableFunction;
-type EmitterEvent = {
+export type EmitterEvent = {
     eventName: string,
     data: unknown
 };

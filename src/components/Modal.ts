@@ -1,12 +1,6 @@
-import { EventEmitter } from "./base/events";
+import { IModal } from "../types";
 
-export interface IModal {
-  content: HTMLElement;
-  closeModal(): void;
-  openModal(): void;
-}
-
-export class Modal extends EventEmitter implements IModal {
+export class Modal implements IModal {
   closeBtnElement: HTMLButtonElement;
   _content: HTMLElement;
   modalContainer: HTMLElement;
@@ -14,7 +8,6 @@ export class Modal extends EventEmitter implements IModal {
   pageWrapper: HTMLElement;
 
   constructor(container: HTMLElement) {
-    super();
     this.modalContainer = container;
     this._content = container.querySelector('.modal__content');
     this.closeBtnElement = container.querySelector('.modal__close');
