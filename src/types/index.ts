@@ -41,7 +41,8 @@ export interface IBasketItem {
 
 export interface IBasketPage {
   basketButton: HTMLElement;
-  basketCounter: HTMLElement;
+  _basketCounter: HTMLElement;
+  basketCounter: string;
 }
 
 export interface IFormAddress {

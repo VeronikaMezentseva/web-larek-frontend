@@ -36,11 +36,23 @@ export class Card implements IViewCard {
       this.cardButton.addEventListener('click', () => this.eventEmitter.emit('card:open', {data: this.cardSource}));
     }
     this.render(this.cardSource);
-    
   }
 
   render(card: CardModel) {
     this.cardCategory.textContent = card.category;
+    this.cardCategory.classList.remove('card__category_soft');
+    switch(card.category) {
+      case 'софт-скил': this.cardCategory.classList.add('card__category_soft');
+        break;
+      case 'другое': this.cardCategory.classList.add('card__category_other');
+        break;
+      case 'дополнительное': this.cardCategory.classList.add('card__category_additional');
+        break;
+      case 'кнопка': this.cardCategory.classList.add('card__category_button');
+        break;
+      case 'хард-скил': this.cardCategory.classList.add('card__category_hard');
+        break;      
+    }
     this.cardTitle.textContent = card.title;
     this.cardImage.src = `${CDN_URL + card.image}`;
     if (this.cardDescription) {
@@ -50,6 +62,10 @@ export class Card implements IViewCard {
       this.cardPrice.textContent = `Бесценно`;
     } else {
       this.cardPrice.textContent = `${card.price} синапсов`;
+    }
+    if (this.cardAddButton && card.price === null) {
+      this.cardAddButton.disabled = true;
+      this.cardAddButton.textContent = 'Товар нельзя купить';
     }
     return this.cardElement;
   }

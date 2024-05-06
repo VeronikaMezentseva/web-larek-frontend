@@ -8,10 +8,12 @@ import { Modal } from "./Modal";
 import { Basket, BasketItem, BasketPage } from "./Basket";
 import { FormAddress, FormContacts, Succsess } from "./Form";
 import { EventEmitter, EmitterEvent } from "./base/events";
+import { State } from "./State";
 
 
 export class Presenter {
   eventEmitter: EventEmitter;
+  state: State;
 
   cardTemplate: HTMLTemplateElement;
   cardPreviewTemplate: HTMLTemplateElement;
@@ -35,13 +37,8 @@ export class Presenter {
   contentContainer: HTMLElement;
   modalContainer: HTMLElement;
 
-  cardList: CardModel[];
-  addedCardList: CardModel[];
-
-  basketButton: HTMLElement;
-  basketCounter: HTMLElement;
-
-  constructor() {
+  constructor(state: State) {
+    this.state = state;
     this.eventEmitter = new EventEmitter();
     this.eventEmitter.on('basket:cardAdded', (evt) => {
       const data = (evt as EmitterEvent).data;
@@ -79,8 +76,6 @@ export class Presenter {
     this.formTemplate = document.querySelector('#order');
     this.modalContainer = document.querySelector('#modal-container');
     this.contentContainer = document.querySelector('.gallery');
-    this.basketButton = document.querySelector('.header__basket');
-    this.basketCounter = document.querySelector('.header__basket-counter');
     
     this.basketPage = new BasketPage(this.eventEmitter);
     this.basketElement = new Basket(this.basketTemplate, this.eventEmitter);
@@ -89,13 +84,9 @@ export class Presenter {
     this.form = new FormAddress(this.formTemplate, this.eventEmitter);
     this.formContacts = new FormContacts(this.contactsTemplate, this.eventEmitter);
     this.succsess = new Succsess(this.succsessTemplate, this.eventEmitter);
-
-    this.cardList = [];
-    this.addedCardList = [];
   }
 
   init() {
-
     const api = new Api(API_URL);
     api.get('/product')
       .then((data: CardModelList) => {
@@ -103,7 +94,7 @@ export class Presenter {
       })
       .then((cards: CardModel[]) => {
         cards.forEach((card: CardModel) => {
-          this.cardList.push(card);
+          this.state.loadedCards.push(card);
           const cardElement = new Card(this.cardTemplate, card, this.eventEmitter);
           const cardItem = cardElement.render(card);
           this.contentContainer.append(cardItem);
@@ -113,42 +104,36 @@ export class Presenter {
 
   openCard(card: CardModel) {
     const cardView = new Card(this.cardPreviewTemplate, card, this.eventEmitter);
+    if (this.state.isAlreadyAdded(card)) {
+      cardView.cardAddButton.disabled = true;
+    }
     this.modal.content = cardView.render(card);
     this.modal.openModal();
   }
 
   addCardToBasket(card: CardModel) {
-    let alreadyAdded = false;
-    this.addedCardList.forEach((item) => {
-      if(item.id === card.id) {
-        alreadyAdded = true;
-      }
-    });
-    if (!alreadyAdded) {
-      this.addedCardList.push(card);
+    if (!this.state.isAlreadyAdded(card)) {
+      this.state.addedCards.push(card);
     }
-    this.basketCounter.textContent = `${this.addedCardList.length}`;
+    this.basketPage.basketCounter = `${this.state.addedCards.length}`;
   }
 
   openBasket() {
-    this.basketElement.disableButton(this.addedCardList);
+    this.basketElement.disableButton(this.state.addedCards);
     this.basketElement.resetContent();
-    this.addedCardList.forEach((cardItem) => {
+    this.state.addedCards.forEach((cardItem) => {
       const basketItem = new BasketItem(this.basketItemTemplate, this.eventEmitter);
-        this.basketElement.content = basketItem.render(cardItem, this.addedCardList);
+        this.basketElement.content = basketItem.render(cardItem, this.state.addedCards);
       });
-      let totalPrice = 0;
-      this.addedCardList.forEach((card) => {
-        totalPrice = totalPrice + card.price;
-      })
-      this.basketElement.total = `${totalPrice}`;
+      this.basketElement.total = `${this.state.getTotalPrice()}`;
       this.modal.content = this.basketElement.render();
       this.modal.openModal();
   }
 
   deleteItem(basketItem: IBasketItem) {
-    this.addedCardList = this.addedCardList.filter((item) => item.id !== basketItem.itemId);
-    this.basketCounter.textContent = `${this.addedCardList.length}`;
+    this.state.addedCards = this.state.addedCards.filter((item) => item.id !== basketItem.itemId);
+    this.basketElement.total = `${this.state.getTotalPrice()}`;
+    this.basketPage.basketCounter = `${this.state.addedCards.length}`;
     this.openBasket();
   }
 
@@ -233,26 +218,21 @@ export class Presenter {
   }
 
   resetBasket() {
-    this.addedCardList = [];
+    this.state.addedCards = [];
     this.modal.content = this.basketElement.render();
-    this.basketCounter.textContent = '0';
+    this.basketPage.basketCounter = '0';
     this.userOptions.resetFields();
     this.formContacts.resetFields();
   }
 
   postOrder() {
     const addedCardsId: string[] = [];
-    let total = 0;
-    this.addedCardList.forEach((item) => {
-      addedCardsId.push(item.id);
-      total = total + item.price;
-    })
     const userOrder = {
       payment: this.userOptions._paymentMethod,
       email: this.userOptions._email,
       phone: this.userOptions._phone,
       address: this.userOptions._addres,
-      total: total,
+      total: this.state.getTotalPrice(),
       items: addedCardsId
     }
     const api = new Api(API_URL);

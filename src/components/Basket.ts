@@ -82,12 +82,16 @@ export class BasketItem implements IBasketItem {
 export class BasketPage implements IBasketPage {
   eventEmitter: EventEmitter;
   basketButton: HTMLElement;
-  basketCounter: HTMLElement;
+  _basketCounter: HTMLElement;
 
   constructor(eventEmitter: EventEmitter) {
     this.eventEmitter = eventEmitter;
     this.basketButton = document.querySelector('.header__basket');
-    this.basketCounter = document.querySelector('.header__basket-counter');
+    this._basketCounter = document.querySelector('.header__basket-counter');
     this.basketButton.addEventListener('click', () => this.eventEmitter.emit('basket:open'));
+  }
+
+  set basketCounter(value: string) {
+    this._basketCounter.textContent = value;
   }
 }
