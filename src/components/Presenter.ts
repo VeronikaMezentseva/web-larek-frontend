@@ -227,6 +227,9 @@ export class Presenter {
 
   postOrder() {
     const addedCardsId: string[] = [];
+    this.state.addedCards.forEach((card) => {
+      addedCardsId.push(card.id);
+    });
     const userOrder = {
       payment: this.userOptions._paymentMethod,
       email: this.userOptions._email,
