@@ -51,16 +51,14 @@ yarn build
 `public description:` string - описание карточки  
 `public image: string` - изображение карточки  
 `public title: string` - заголовок карточки  
-`public category: CardCategory` - описание категории карточки  
-`public price: number | null` - цена карточк   
-
-`CardCategory` - enum список, хранящий строковое описание категорий карточек  
+`public category: string` - описание категории карточки  
+`public price: number | null` - цена карточк    
 
 Модель `UserOptions` используется для хранения данных, введенных пользователем  
- `_paymentMethod: 'card' | 'cash' | null` - выбранный способ оплаты, null если не выбран  
- `_addres: string` - введенный адрес  
- `_email: string` - введенная почта  
- `_phone: string` - введенный номре телефона  
+ `userPaymentMethod: 'card' | 'cash' | null` - выбранный способ оплаты, null если не выбран  
+ `userAddres: string` - введенный адрес  
+ `userEmail: string` - введенная почта  
+ `userPhone: string` - введенный номре телефона  
  Методы модели:  
 `resetFields()` - сбрасывает все поля с данными, введенными пользователем до начальных значений, то есть пустых строк. Метод используется после оформления заказа и успешной оплаты для сброса данных.  
 Сеттеры:  
@@ -71,12 +69,13 @@ yarn build
 
 Презентер `Presenter` используется для описания и выполнения основной логики приложения. 
 Конструктор:  
-Конструктор принимает экземпляр класса `State`. В конструкторе презентера создается единственный экземпляр класса `EventEmitter`, с помощью метода эмиттера `on` создаются обработчики на все типы событий. Также в конструкторе презентера находятся querySelector'ом все тимплейты и контейнеры и сохраняются в поля класса.  
-Поля `cardList: CardModel[]` и `addedCardList: CardModel[]` инициализируются как пустые массивы в конструкторе, в дальнейшем при получении карточек с сервера их данные сохраняются в cardList, а в addedCardList будут хранится данные тех карточек, которые пользователь добавил в корзину. Также в конструкторе создаются и записываются в поля презентера единственные экземпляры классов View `BasketPage` `Basket`, `Modal`, `FormAddress`, `FormContacts`, `Succsess` и `UserOptions`  
+Конструктор принимает экземпляр класса `CardsState`. В конструкторе презентера создается единственный экземпляр класса `EventEmitter`, с помощью метода эмиттера `on` создаются обработчики на все типы событий. Также в конструкторе презентера находятся querySelector'ом все тимплейты и контейнеры и сохраняются в поля класса.  
+В конструкторе создаются и записываются в поля презентера единственные экземпляры классов View `BasketPage` `Basket`, `Modal`, `FormAddress`, `FormContacts`, `Succsess` и `UserOptions`, а также `Api` для формирования запросов к серверу.  
 Методы презентера:  
 `init()` - отправляет запрос на сервер для получения карточек товаров и выводит их на страницу.  
  `openCard(card: CardModel)` - создает объект отображения превью карточки, заполняя его данными из модели карточки, открывает модальное окно с содержимым.  
  `addCardToBasket(card: CardModel)` - добавляет товар в корзину, размещая объект CardModel в addedCardList.  
+ `renderItems()` - метод для рендера товаров в корзине, вызывается при изменении состояния корзины  
  `openBasket()` - отображает содержимое корзины.  
  `deleteItem(basketItem: IBasketItem)` - удаляет товар из корзины, обновляет addedCardList и перерисовывает содержимое корзины.  
  `openForm()` - отображает форму с выбором способа оплаты и адресом.  
@@ -85,7 +84,7 @@ yarn build
  `toggleButtonForm(button: HTMLButtonElement)` - меняет состояние кнопки формы в зависимости от данных в модели userOptions  
  `submitAddressForm()` - отображает форму с адресом и телефоном  
  `handleEmailInput(data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement})` - меняет данные почты в модели userOptions  
- ` handlePhoneInput(data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement})` - меняет данные номера в модели userOptions  
+ `handlePhoneInput(data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement})` - меняет данные номера в модели userOptions  
  `toggleButtonFormContacts(button: HTMLButtonElement)` - меняет состояние кнопки сабмита в форме контактов в зависимости от данных в userOptions  
  `openSuccsess()` - отображает окно об успешной оплате  
  `resetBasket()` - очищает содержимое отображения корзины  
@@ -109,36 +108,46 @@ yarn build
 `offAll()` - снимает все обработчики.  
 `trigger<T extends object>(eventName: string, context?: Partial<T>)` - вызывает коллбек триггер, генерирующий событие при вызове.
 
-3) Класс State  
-Класс для хранения состояний некоторых элементов страницы, экземпляр класса передается в конструктор презентера.  
+3) Класс CardsState  
+Класс для хранения состояний карточек, экземпляр класса передается в конструктор презентера.  
   `loadedCards: CardModel[]` - поле для хранения загруженных на страницу карточек товара, в конструкторе инициализируется как пустой массив  
   `addedCards: CardModel[]` - поле для хранения карточек, добавленных пользователем в корзину, в конструкторе инициализируется как пустой массив  
   `totalPrice: number` - поле для хранения итоговой стоимости заказа пользователя  
 Метод `getTotalPrice()` подсчитывает и возвращает итоговую стоимость заказа  
 
-Классы отображения View 
+Классы отображения View  
+
+Все классы слоя отображения наследуют базовый класс `Component`. Конструктор класса принимает html контейнер.  
+Методы класса:  
+`toggleClass(element: HTMLElement, className: string, force?: boolean)` - тоглер классов  
+`protected setText(element: HTMLElement, value: unknown)` - позволяет утсановить текстовое содержимое элементу  
+`setDisabled(element: HTMLElement, state: boolean)` - позволяет сменить статус блокировки кнопки  
+`protected setHidden(element: HTMLElement)` - скрывает элемент  
+`protected setVisible(element: HTMLElement)` - делает элемент видимым  
+`protected setImage(element: HTMLImageElement, src: string, alt?: string)` - устанавливает изображение с альтернативным текстом  
+`render(data?: Partial<T>): HTMLElement` - возвращает корневой DOM-элемент  
 
 1) Класс Basket  
 Класс для отображения корзины на странице. 
-Конструктор принимает тимплейт корзины для создания элемента корзины и инициализирует такие поля как:  
+Конструктор принимает контейнер корзины и инициализирует такие поля как:  
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
-  `basketElement: HTMLElement` - клонированный тимплейт  
+  `basketElement: HTMLElement` - контейнер корзины  
   `basketTotalPrice: HTMLElement` - отображает общую стоимость всех товаров, добавленных в корзину.  
-  `_basketList: HTMLElement` - контейнер для отображения товаров в корзине.  
+  `basketList: HTMLElement` - контейнер для отображения товаров в корзине.  
   `submitButton: HTMLButtonElement` - кнопка для оформления заказа, при клике генерирует событие submit:order.  
 Методы:  
-`render()` - возвращает клонированный тимплейт со всеми дочерними элементами.  
-`set content(value: HTMLElement)` - сеттер, аппендит HTML элемент итема, добавленного в корзину, в поле _basketList для последующий отрисовки их на странице.  
+`set content(value: HTMLElement)` - сеттер, аппендит HTML элемент итема, добавленного в корзину, в поле _basketList для последующий отрисовки их на странице.
+`resetContent()` - очищает разметку контейнера для отображения товаров в корзине  
 `set total(value: string)` - сеттер, отображает общую стоимость всех элементов в корзине.  
-`disableButton(addedCardList: card[])` - метод, принимающий список добавленных в корзину итемов, меняет состояние кнопки сабмита.  
+`disableButton(addedCardList: cardModel[])` - метод, принимающий список добавленных в корзину итемов, меняет состояние кнопки сабмита.  
 `resetContent()` - очищает разметку в _basketList  
 `disableButton(addedCardList: CardModel[])` - меняет состояние кнопки сабмита  
 
-2) Класс BasketItem  
+3) Класс BasketItem  
 Класс для отображения добавленного итема в корзину  
-Конструктор принимает тимплейт итема для создания элемента и инициализирует такие поля как:  
+Конструктор принимает контейнер итема и эмиттер и инициализирует такие поля как:  
   `eventEmitter: EventEmitter` - хранит ивент эмиттер
-  `basketElement: HTMLElement` - клонированный тимплейт   
+  `basketElement: HTMLElement` - контейнер элемента   
   `basketItemIndex: HTMLElement` - элемент отображения порядкового номера элемента в корзине  
   `basketItem: HTMLElement` - контейнер элемента  
   `basketItemTitle: HTMLElement` - элемент для отображения названия итема  
@@ -146,37 +155,46 @@ yarn build
   `basketItemDeleteButton: HTMLButtonElement` - кнопка для удаления итема из корзины, генерирует событие basket:itemDelete  
   `itemId: string` - поле для хранения id создаваемого итема  
 Методы:  
-`render(card: cardModel, cardsList: cardModel[])` - метод устанавливающий текст для отображения в элементах итема, возвращает разметку карточки в корзине. В аргументах принимает модель карточки и список добавленных карточек.  
+`set id(value: string)` - устанавливает айди итема  
+`set title(value: string)` - устанавливает текст в заголовке итема  
+`set price(value: number)` - устанавливает цену итема  
+`set index(value: number)` - устанавливает порядковый номер итема в корзине  
 
-3) Класс BasketPage  
-Класс для отображения элемента корзины на странице магазина, поля класса:  
+5) Класс BasketPage  
+Класс для отображения элемента корзины на странице магазина, конструктор класса принимает контейнер и EventEmitter поля класса:  
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
   `basketButton: HTMLElement` - кнопка для открытия корзины, инициирует событие basket:open по клику  
-  `_basketCounter: HTMLElement` - элемент, отображающих количество товаров, добавленных в корзину
-Сеттер `basketCounter(value: string)` - устанавливает переданное значение в счетчик итемов корзины  
+  `basketCounter: HTMLElement` - элемент, отображающих количество товаров, добавленных в корзину
+Сеттер `counter(value: string)` - устанавливает переданное значение в счетчик итемов корзины  
 
-5) Класс Card  
+6) Класс Card  
 Класс для отображения каталога карточек на странице и отображения карточки с полным описанием при открытии превью.  
-Конструктор принимает тимплейт карточки и EventEmitter.  
-Содержит поля:
+Конструктор принимает контейнер карточки и EventEmitter.  
+Содержит поля:  
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
-  `cardElement:` HTMLElement - хранит клонированный тимплейт  
-  `cardButton?:` HTMLButtonElement - кнопка-обертка карточки, необязательное поле. При клике инициирует событие card:open для открытия превью карточки  
-  `cardCategory:` HTMLElement - элемент для отображения категории карточки  
-  `cardTitle:` HTMLElement - элемент отображения названия карточки  
-  `cardImage:` HTMLImageElement - отображение картонки карточки  
-  `cardPrice:` HTMLElement - элемент отображения цены карточки  
-  `cardDescription?:` HTMLElement - отображение полного описания карточки, необязательное поле  
-  `cardAddButton?`: HTMLButtonElement - кнопка для добавления карточки в корзину, инициирует событие basket:cardAdded, необязательное поле  
+  `gallery: HTMLElement` - контейнер страницы для хранения всех кареточек  
+  `cardElement: HTMLElement` - контейнер карточки   
+  `cardButton?: HTMLButtonElement` - кнопка-обертка карточки, необязательное поле. При клике инициирует событие card:open для открытия превью карточки  
+  `cardCategory: HTMLElement` - элемент для отображения категории карточки  
+  `cardTitle: HTMLElement` - элемент отображения названия карточки  
+  `cardImage: HTMLImageElement` - отображение картонки карточки  
+  `cardPrice: HTMLElement` - элемент отображения цены карточки  
+  `cardDescription?: HTMLElement` - отображение полного описания карточки, необязательное поле  
+  `cardAddButton?: HTMLButtonElement` - кнопка для добавления карточки в корзину, инициирует событие basket:cardAdded, необязательное поле  
 Методы:  
-`render(card: cardModel)` - метод, устанавливающий текст для отображения элементов карточки, принимает аргументом модель карточки.  
+`appendCard(card: HTMLElement)` - добавляет разметку карточки в общий контейнер gallery  
+`set title(value: string)` - устанавливает текст в заголовке карточки  
+`set image(value: string)` - устанавливает изображение карточки  
+`set category(value: string)` - устанавливает текст категории карточки и добавляет класс нужной категории  
+`set description(value: string)` - устанавливает текстовое описание карточки  
+`set price(value: number)` - устанавливает цену карточки  
 
-6) Класс FormAddress  
+8) Класс FormAddress  
 Класс для отображения элементов формы адреса  
-Конструктор принимает тимплейт формы и EventEmitter.  
+Конструктор принимает контейнер формы и EventEmitter.  
 Содержит поля:
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
-  `formElement: HTMLFormElement` - хранит клонированный тимплейт со всеми дочерними элементами.  
+  `formElement: HTMLFormElement` - хранит контейнер формы  
   `form: HTMLFormElement` - контейнер формы  
   `onlineButton: HTMLButtonElement` - кнопка выбора оплаты, при клике вызывает метод класса activateOnlineButton() и инициирует событие user:onlineSelected  
   `offlineButton: HTMLButtonElement` - кнопка выбора оплаты, при клике вызывает метод класса activateOOfflineButton() и инициирует событие user:offlineSelected  
@@ -186,42 +204,39 @@ yarn build
 Методы:  
 `activateOnlineButton()` - метод, вызывающийся при нажатии на кнопку onlineButton, изменяет классы кнопки для отображения выбранного пользователем метода оплаты  
 `activateOfflineButton()` - метод, вызывающийся при нажатии на кнопку offlineButton, изменяет классы кнопки для отображения выбранного пользователем метода оплаты  
-`render()` - возвращает элемент формы со всеми дочерними элементами.
 `resetFields()` - очищает поля формы  
 
-7) Класс FormContacts  
+9) Класс FormContacts  
 Класс для отображения элементов формы контактов  
-Конструктор принимает тимплейт формы контактов и EventEmitter.  
-Содержит поля:
+Конструктор принимает контейнер формы контактов и EventEmitter.  
+Содержит поля:  
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
-  `templateForm: HTMLFormElement` -  хранит клонированный тимплейт со всеми дочерними элементами  
+  `templateForm: HTMLFormElement` -  хранит контейнер формы  
   `form: HTMLFormElement` - контейнер формы контактов  
   `emailInput: HTMLInputElement` - элемент инпута почты формы, при вводе данных пользователем инициирует событие user:emailInput  
   `phoneInput: HTMLInputElement` - элемент инпута телефона формы, при вводе данных пользователем инициирует событие user:phoneInput  
   `submitButton: HTMLButtonElement` - кнопка сабмита формы, инициирует событие user:contactsFormSubmit  
   `error: HTMLElement` - элемент для отображения кастомных ошибок привалидации формы  
 Методы:  
-`render()` - возвращает элемент формы со всеми дочерними элементами.
 `resetFields()` - очищает поля формы  
 
-8) Класс Succsess  
+10) Класс Succsess  
 Класс для отображения сообщения об успешной оплате товаров  
-Конструктор принимает тимплейт окна и EventEmitter.  
+Конструктор принимает контейнер окна и EventEmitter.  
 Содержит поля:
   `eventEmitter: EventEmitter` - хранит ивент эмиттер  
-  `element: HTMLElement` - хранит клонированный тимплейт со всеми дочерними элементами  
+  `element: HTMLElement` - хранит контейнер окна  
   `orderDescription: HTMLElement` - элемент для отображения информации об оплате товаров  
   `button: HTMLButtonElement` - кнопка закрытия окна, инициирует событие succsess:close  
 Методы:  
-`setDescription(value: string)` - заполняет текст в элементе orderDescription  
-`render ()` - возвращает элемент окна с дочерними элементами  
+`setDescription(value: string)` - заполняет текст в элементе orderDescription   
 
-9) Класс Modal  
+11) Класс Modal  
 Класс для отображения модального окна, предоставляет методы его открытия, закрытия и наполнения контентом.  
 Конструктор принимает контейнер модального окна.  
 Содержит поля:  
   `closeBtnElement: HTMLButtonElement` - кнопка закрытия модального окна, при клике вызывает метод класса closeModal()  
-  `_content: HTMLElement` - поле, хранящее разметку для отображения в модальном окне.  
+  `modalContent: HTMLElement` - поле, хранящее разметку для отображения в модальном окне.  
   `modalContainer: HTMLElement` - контейнер модального окна для реализации закрытия модального окна при клике по оверлею, при клике вызывает метод класса closeModal()  
   `pageWrapper: HTMLElement` - хранит элемент обертки всей страницы, для возможности ее заблокировать при открытии модального окна  
 Методы:  
