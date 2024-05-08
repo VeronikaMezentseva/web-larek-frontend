@@ -1,38 +1,38 @@
 import { IUserOption } from "../types";
 
 export class UserOptions implements IUserOption {
-  _paymentMethod: 'card' | 'cash' | null;
-  _addres: string;
-  _email: string;
-  _phone: string;
+  userPaymentMethod: 'card' | 'cash' | null;
+  userAddress: string;
+  userEmail: string;
+  userPhone: string;
 
   constructor() {
-    this._paymentMethod = null;
-    this._addres = '';
-    this._email = '';
-    this._phone = '';
+    this.paymentMethod = null;
+    this.address = '';
+    this.email = '';
+    this.phone = '';
   };
 
   set paymentMethod(value: 'card' | 'cash' | null) {
-    this._paymentMethod = value;
+    this.userPaymentMethod = value;
   }
 
   set address(value: string) {
-    this._addres = value;
+    this.userAddress = value;
   }
 
   set email(value: string) {
-    this._email = value;
+    this.userEmail = value;
   }
 
   set phone(value: string) {
-    this._phone = value;
+    this.userPhone = value;
   }
 
   resetFields() {
-    this._paymentMethod = null;
-    this._addres = '';
-    this._email = '';
-    this._phone = '';
+    this.userPaymentMethod = null;
+    this.userAddress = '';
+    this.userEmail = '';
+    this.userPhone = '';
   }
 }

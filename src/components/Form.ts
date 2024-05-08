@@ -1,7 +1,8 @@
-import { IFormAddress, IFormContacts, ISuccsess } from "../types";
+import { IFormAddress, IFormContacts } from "../types";
+import { Component } from "./base/component";
 import { EventEmitter } from "./base/events";
 
-export class FormAddress implements IFormAddress {
+export class FormAddress extends Component<FormAddress> implements IFormAddress<FormAddress> {
   eventEmitter: EventEmitter
   formElement: HTMLFormElement;
   form: HTMLFormElement;
@@ -11,9 +12,10 @@ export class FormAddress implements IFormAddress {
   submitButton: HTMLButtonElement;
   error: HTMLElement;
 
-  constructor(template: HTMLTemplateElement, eventEmitter: EventEmitter) {
+  constructor(container: HTMLFormElement, eventEmitter: EventEmitter) {
+    super(container);
     this.eventEmitter = eventEmitter;
-    this.formElement = template.content.querySelector('.form').cloneNode(true) as HTMLFormElement;
+    this.formElement = container;
     this.form = this.formElement;
     this.onlineButton = this.form.elements.namedItem('card') as HTMLButtonElement;
     this.offlineButton = this.form.elements.namedItem('cash') as HTMLButtonElement;
@@ -39,10 +41,6 @@ export class FormAddress implements IFormAddress {
     })
   }
 
-  render() {
-    return this.formElement;
-  }
-
   activateOnlineButton() {
     this.onlineButton.classList.add('button_alt-active');
     this.offlineButton.classList.remove('button_alt-active');
@@ -56,12 +54,12 @@ export class FormAddress implements IFormAddress {
   resetFields() {
     this.offlineButton.classList.remove('button_alt-active');
     this.onlineButton.classList.remove('button_alt-active');
-    this.submitButton.disabled = true;
+    this.setDisabled(this.submitButton, true);
     this.inputAddres.value = '';
   }
 }
 
-export class FormContacts implements IFormContacts {
+export class FormContacts extends Component<FormContacts> implements IFormContacts<FormContacts> {
   eventEmitter: EventEmitter;
   templateForm: HTMLFormElement;
   form: HTMLFormElement;
@@ -70,9 +68,10 @@ export class FormContacts implements IFormContacts {
   submitButton: HTMLButtonElement;
   error: HTMLElement;
 
-  constructor (template: HTMLTemplateElement, eventEmitter: EventEmitter) {
+  constructor (container: HTMLFormElement, eventEmitter: EventEmitter) {
+    super(container);
     this.eventEmitter = eventEmitter;
-    this.templateForm = template.content.querySelector('.form').cloneNode(true) as HTMLFormElement;
+    this.templateForm = container;
     this.form = this.templateForm;
     this.emailInput = this.form.elements.namedItem('email') as HTMLInputElement;
     this.phoneInput = this.form.elements.namedItem('phone') as HTMLInputElement;
@@ -87,36 +86,9 @@ export class FormContacts implements IFormContacts {
     })
   }
 
-  render() {
-    return this.templateForm;
-  }
-
   resetFields() {
-    this.submitButton.disabled = true;
+    this.setDisabled(this.submitButton, true);
     this.emailInput.value = '';
     this.phoneInput.value = '';
-  }
-}
-
-export class Succsess implements ISuccsess {
-  eventEmitter: EventEmitter;
-  element: HTMLElement;
-  orderDescription: HTMLElement;
-  button: HTMLButtonElement;
-
-  constructor(template: HTMLTemplateElement, eventEmitter: EventEmitter) {
-    this.eventEmitter = eventEmitter;
-    this.element = template.content.querySelector('.order-success').cloneNode(true) as HTMLFormElement;
-    this.orderDescription = this.element.querySelector('.order-success__description');
-    this.button = this.element.querySelector('.order-success__close');
-    this.button.addEventListener('click', () => this.eventEmitter.emit('succsess:close'));
-  }
-
-  setDescription(value: string) {
-    this.orderDescription.textContent = value;
-  }
-
-  render () {
-    return this.element;
   }
 }

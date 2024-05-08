@@ -2,11 +2,13 @@ import { CardModel } from './CardModel';
 import { IViewCard } from '../types';
 import { CDN_URL } from '../utils/constants';
 import { EventEmitter } from './base/events';
+import { Component } from './base/component';
 
-export class Card implements IViewCard {
+export class Card extends Component<Card> implements IViewCard {
 
   cardSource: CardModel;
   eventEmitter: EventEmitter;
+  gallery: HTMLElement;
   cardElement: HTMLElement;
   cardButton?: HTMLButtonElement;
   cardCategory: HTMLElement;
@@ -16,10 +18,12 @@ export class Card implements IViewCard {
   cardDescription?: HTMLElement;
   cardAddButton?: HTMLButtonElement;
 
-  constructor(template: HTMLTemplateElement, card: CardModel, eventEmitter: EventEmitter) {
+  constructor(container: HTMLElement, card: CardModel, eventEmitter: EventEmitter) {
+    super(container);
     this.cardSource = card;
     this.eventEmitter = eventEmitter;
-    this.cardElement = template.content.cloneNode(true) as HTMLElement;
+    this.gallery = document.querySelector('.gallery');
+    this.cardElement = container;
     this.cardCategory = this.cardElement.querySelector('.card__category');
     this.cardTitle = this.cardElement.querySelector('.card__title');
     this.cardImage = this.cardElement.querySelector('.card__image');
@@ -30,18 +34,29 @@ export class Card implements IViewCard {
     if (this.cardElement.querySelector('.card__button')) {
       this.cardAddButton = this.cardElement.querySelector('.card__button');
       this.cardAddButton.addEventListener('click', () => this.eventEmitter.emit('basket:cardAdded', {data: this.cardSource}));
+      this.cardAddButton.addEventListener('click', () => this.eventEmitter.emit('basket:changed', {data: this.cardSource}));
     }
     if (this.cardElement.querySelector('.gallery__item')) {
       this.cardButton = this.cardElement.querySelector('.gallery__item');
       this.cardButton.addEventListener('click', () => this.eventEmitter.emit('card:open', {data: this.cardSource}));
     }
-    this.render(this.cardSource);
   }
 
-  render(card: CardModel) {
-    this.cardCategory.textContent = card.category;
-    this.cardCategory.classList.remove('card__category_soft');
-    switch(card.category) {
+  appendCard(card: HTMLElement) {
+    this.gallery.append(card);
+  }
+
+  set title(value: string) {
+    this.setText(this.cardTitle, value);
+  }
+
+  set image(value: string) {
+    this.setImage(this.cardImage, `${CDN_URL + value}`);
+  }
+
+  set category(value: string) {
+    this.setText(this.cardCategory, value);
+    switch(value) {
       case 'софт-скил': this.cardCategory.classList.add('card__category_soft');
         break;
       case 'другое': this.cardCategory.classList.add('card__category_other');
@@ -53,22 +68,22 @@ export class Card implements IViewCard {
       case 'хард-скил': this.cardCategory.classList.add('card__category_hard');
         break;      
     }
-    this.cardTitle.textContent = card.title;
-    this.cardImage.src = `${CDN_URL + card.image}`;
-    if (this.cardDescription) {
-      this.cardDescription.textContent = card.description;
-    }
-    if (card.price === null) {
-      this.cardPrice.textContent = `Бесценно`;
+  }
+
+  set description(value: string) {
+    this.setText(this.cardDescription, value);
+  }
+
+  set price(value: number) {
+    if (value === null) {
+      this.setText(this.cardPrice, 'Бесценно');
     } else {
-      this.cardPrice.textContent = `${card.price} синапсов`;
+      this.setText(this.cardPrice, `${value} синапсов`);
     }
-    if (this.cardAddButton && card.price === null) {
-      this.cardAddButton.disabled = true;
-      this.cardAddButton.textContent = 'Товар нельзя купить';
+
+    if (value === null && this.cardAddButton) {
+      this.setDisabled(this.cardAddButton, true);
+      this.setText(this.cardAddButton, 'Товар нельзя купить');
     }
-    return this.cardElement;
   }
 }
-
-export { CardModel };

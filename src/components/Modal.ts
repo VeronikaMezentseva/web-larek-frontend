@@ -1,15 +1,17 @@
 import { IModal } from "../types";
+import { Component } from "./base/component";
 
-export class Modal implements IModal {
+export class Modal extends Component<Modal> implements IModal {
   closeBtnElement: HTMLButtonElement;
-  _content: HTMLElement;
+  modalContent: HTMLElement;
   modalContainer: HTMLElement;
   rootContainer: HTMLElement;
   pageWrapper: HTMLElement;
 
   constructor(container: HTMLElement) {
+    super(container);
     this.modalContainer = container;
-    this._content = container.querySelector('.modal__content');
+    this.modalContent = container.querySelector('.modal__content');
     this.closeBtnElement = container.querySelector('.modal__close');
     this.pageWrapper = document.querySelector('.page__wrapper');
     this.rootContainer = document.querySelector('.modal__container');
@@ -30,6 +32,6 @@ export class Modal implements IModal {
   }
 
   set content(value: HTMLElement) {
-    this._content.replaceChildren(value);
+    this.modalContent.replaceChildren(value);
   }
 }

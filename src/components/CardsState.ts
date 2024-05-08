@@ -1,6 +1,6 @@
 import { CardModel } from "./CardModel";
 
-export class State {
+export class CardsState {
   loadedCards: CardModel[];
   addedCards: CardModel[];
   totalPrice: number;
@@ -11,15 +11,14 @@ export class State {
     this.totalPrice = 0;
   }
 
-  isAlreadyAdded(card: CardModel) {
-    let isAlreadyAdded;
-    this.addedCards.forEach((item) => {
-      if (card.id === item.id) {
+  isAlreadyAdded(cardId: string) {
+    let isAlreadyAdded = false;
+    for (let i = 0; i < this.addedCards.length; i++) {
+      if (this.addedCards[i].id === cardId) {
         isAlreadyAdded = true;
-      } else {
-        isAlreadyAdded = false;
+        break;
       }
-    });
+    }
     return isAlreadyAdded;
   }
 

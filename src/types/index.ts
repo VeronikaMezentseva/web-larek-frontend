@@ -11,24 +11,23 @@ export interface IViewCard {
   cardTitle: HTMLElement;
   cardImage: HTMLImageElement;
   cardPrice: HTMLElement;
-  render(card: CardModel): HTMLElement;
   cardDescription?: HTMLElement;
   cardAddButton?: HTMLButtonElement;
 }
 
-export interface IBasket {
+export interface IBasket<T> {
   basketElement: HTMLElement;
   basketTotalPrice: HTMLElement;
-  _basketList: HTMLElement;
+  basketList: HTMLElement;
   submitButton: HTMLButtonElement;
-  render(): HTMLElement;
   content: HTMLElement;
   total: string;
   disableButton(addedCardList: CardModel[]): void;
   resetContent(): void;
+  render(container: Partial<T>): HTMLElement;
 }
 
-export interface IBasketItem {
+export interface IBasketItem<T> {
   basketElement: HTMLElement;
   basketItemIndex: HTMLElement;
   basketItem: HTMLElement;
@@ -36,31 +35,31 @@ export interface IBasketItem {
   basketItemPrice: HTMLElement;
   basketItemDeleteButton: HTMLButtonElement;
   itemId: string;
-  render(card: CardModel, cardsList: CardModel[]): HTMLElement;
+  render(container: Partial<T>): HTMLElement;
 }
 
-export interface IBasketPage {
+export interface IBasketPage<T> {
   basketButton: HTMLElement;
-  _basketCounter: HTMLElement;
-  basketCounter: string;
+  basketCounter: HTMLElement;
+  counter: string;
 }
 
-export interface IFormAddress {
+export interface IFormAddress<T> {
   formElement: HTMLFormElement;
   form: HTMLFormElement;
   onlineButton: HTMLButtonElement;
   offlineButton: HTMLButtonElement;
   inputAddres: HTMLInputElement;
   submitButton: HTMLButtonElement;
-  render(): HTMLElement;
+  render(container: Partial<T>): HTMLElement;
   resetFields(): void;
 }
 
 export interface IUserOption {
-  _paymentMethod: 'card' | 'cash' | null;
-  _addres: string;
-  _email: string;
-  _phone: string;
+  userPaymentMethod: 'card' | 'cash' | null;
+  userAddress: string;
+  userEmail: string;
+  userPhone: string;
   paymentMethod: 'card' | 'cash' | null;
   address: string;
   email: string;
@@ -68,19 +67,19 @@ export interface IUserOption {
   resetFields(): void;
 }
 
-export interface IFormContacts {
+export interface IFormContacts<T> {
   templateForm: HTMLFormElement;
   form: HTMLFormElement;
   emailInput: HTMLInputElement;
   phoneInput: HTMLInputElement;
   submitButton: HTMLButtonElement;
-  render(): HTMLElement;
+  render(container: Partial<T>): HTMLElement;
   resetFields(): void;
 }
 
-export interface ISuccsess {
+export interface ISuccsess<T> {
   element: HTMLElement;
-  render(): HTMLElement;
+  render(container: Partial<T>): HTMLElement;
   setDescription(value: string): void;
 }
 

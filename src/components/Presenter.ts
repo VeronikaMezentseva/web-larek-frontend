@@ -1,4 +1,5 @@
-import { Card, CardModel } from "./Card";
+import { Card } from "./Card";
+import { CardModel } from './CardModel';
 import { UserOptions } from "./UserOptionsModel";
 import { IViewCard, CardModelList, IModal, IBasket, IBasketItem, IBasketPage,
   IFormAddress, IFormContacts, ISuccsess, IUserOption} from "../types";
@@ -6,14 +7,16 @@ import { API_URL } from "../utils/constants";
 import { Api } from "./base/api";
 import { Modal } from "./Modal";
 import { Basket, BasketItem, BasketPage } from "./Basket";
-import { FormAddress, FormContacts, Succsess } from "./Form";
+import { FormAddress, FormContacts } from "./Form";
+import { Succsess } from "./Succsess";
 import { EventEmitter, EmitterEvent } from "./base/events";
-import { State } from "./State";
+import { CardsState } from "./CardsState";
 
 
 export class Presenter {
   eventEmitter: EventEmitter;
-  state: State;
+  state: CardsState;
+  api: Api;
 
   cardTemplate: HTMLTemplateElement;
   cardPreviewTemplate: HTMLTemplateElement;
@@ -24,20 +27,18 @@ export class Presenter {
   formTemplate: HTMLTemplateElement;
 
   modal: IModal;
-  form: IFormAddress;
-  formContacts: IFormContacts;
-  succsess: ISuccsess;
+  form: IFormAddress<FormAddress>;
+  formContacts: IFormContacts<FormContacts>;
+  succsess: ISuccsess<Succsess>;
   userOptions: IUserOption;
-
   cardPreviewElement: IViewCard;
-  basketPage: IBasketPage;
-  basketItemElement: IBasketItem;
-  basketElement: IBasket;
+  basketPage: IBasketPage<BasketPage>;
+  basketItemElement: IBasketItem<BasketItem>;
+  basketElement: IBasket<Basket>;
 
-  contentContainer: HTMLElement;
   modalContainer: HTMLElement;
 
-  constructor(state: State) {
+  constructor(state: CardsState) {
     this.state = state;
     this.eventEmitter = new EventEmitter();
     this.eventEmitter.on('basket:cardAdded', (evt) => {
@@ -51,10 +52,14 @@ export class Presenter {
       this.openCard(data as CardModel);
     });
 
+    this.eventEmitter.on('basket:changed', () => {
+      this.renderItems();
+    });
+
     this.eventEmitter.on('basket:open', () => this.openBasket());
     this.eventEmitter.on('basket:itemDelete', (evt) => {
       const data = (evt as EmitterEvent).data;
-      this.deleteItem(data as IBasketItem);
+      this.deleteItem(data as IBasketItem<BasketItem>);
     });
     this.eventEmitter.on('submit:order', () => this.openForm());
 
@@ -64,7 +69,7 @@ export class Presenter {
     this.eventEmitter.on('user:submitForm', () => this.submitAddressForm());
     this.eventEmitter.on('user:emailInput', (data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement}) => this.handleEmailInput(data));
     this.eventEmitter.on('user:phoneInput', (data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement}) => this.handlePhoneInput(data));
-    this.eventEmitter.on('user:contactsFormSubmit', () => this.openSuccsess());
+    this.eventEmitter.on('user:contactsFormSubmit', () => this.postOrder());
     this.eventEmitter.on('succsess:close', () => this.modal.closeModal());
 
     this.cardTemplate = document.querySelector('#card-catalog');
@@ -75,78 +80,100 @@ export class Presenter {
     this.contactsTemplate = document.querySelector('#contacts');
     this.formTemplate = document.querySelector('#order');
     this.modalContainer = document.querySelector('#modal-container');
-    this.contentContainer = document.querySelector('.gallery');
     
-    this.basketPage = new BasketPage(this.eventEmitter);
-    this.basketElement = new Basket(this.basketTemplate, this.eventEmitter);
+    this.api = new Api(API_URL);
+    this.basketPage = new BasketPage(document.querySelector('.header__basket-counter'), this.eventEmitter);
+    this.basketElement = new Basket(this.basketTemplate.content.querySelector('.basket').cloneNode(true) as HTMLElement, this.eventEmitter);
     this.userOptions = new UserOptions();
     this.modal = new Modal(this.modalContainer);
-    this.form = new FormAddress(this.formTemplate, this.eventEmitter);
-    this.formContacts = new FormContacts(this.contactsTemplate, this.eventEmitter);
-    this.succsess = new Succsess(this.succsessTemplate, this.eventEmitter);
+    this.form = new FormAddress(this.formTemplate.content.querySelector('.form').cloneNode(true) as HTMLFormElement, this.eventEmitter);
+    this.formContacts = new FormContacts(this.contactsTemplate.content.querySelector('.form').cloneNode(true) as HTMLFormElement, this.eventEmitter);
+    this.succsess = new Succsess(this.succsessTemplate.content.querySelector('.order-success').cloneNode(true) as HTMLFormElement, this.eventEmitter);
   }
 
   init() {
-    const api = new Api(API_URL);
-    api.get('/product')
+    this.api.get('/product')
       .then((data: CardModelList) => {
         return data.items;
       })
       .then((cards: CardModel[]) => {
         cards.forEach((card: CardModel) => {
           this.state.loadedCards.push(card);
-          const cardElement = new Card(this.cardTemplate, card, this.eventEmitter);
-          const cardItem = cardElement.render(card);
-          this.contentContainer.append(cardItem);
+          const cardElement = new Card(this.cardTemplate.content.cloneNode(true) as HTMLElement, card, this.eventEmitter);
+          const cardItem = cardElement.render({
+            title: card.title,
+            image: card.image,
+            category: card.category,
+            price: card.price
+          });
+          cardElement.appendCard(cardItem);
         })
+      })
+      .catch((err) => {
+        console.log(err);
       });
   }
 
   openCard(card: CardModel) {
-    const cardView = new Card(this.cardPreviewTemplate, card, this.eventEmitter);
-    if (this.state.isAlreadyAdded(card)) {
-      cardView.cardAddButton.disabled = true;
+    const cardView = new Card(this.cardPreviewTemplate.content.cloneNode(true) as HTMLElement, card, this.eventEmitter);
+    if (this.state.isAlreadyAdded(card.id)) {
+      cardView.setDisabled(cardView.cardAddButton, true);
     }
-    this.modal.content = cardView.render(card);
+    this.modal.content = cardView.render({
+      title: card.title,
+      image: card.image,
+      category: card.category,
+      price: card.price,
+      description: card.description
+    });
     this.modal.openModal();
   }
 
   addCardToBasket(card: CardModel) {
-    if (!this.state.isAlreadyAdded(card)) {
+    if (!this.state.isAlreadyAdded(card.id)) {
       this.state.addedCards.push(card);
     }
-    this.basketPage.basketCounter = `${this.state.addedCards.length}`;
+    this.basketPage.counter = `${this.state.addedCards.length}`;
   }
-
-  openBasket() {
+  
+  renderItems() {
     this.basketElement.disableButton(this.state.addedCards);
     this.basketElement.resetContent();
     this.state.addedCards.forEach((cardItem) => {
-      const basketItem = new BasketItem(this.basketItemTemplate, this.eventEmitter);
-        this.basketElement.content = basketItem.render(cardItem, this.state.addedCards);
+      const basketItem = new BasketItem(this.basketItemTemplate.content.cloneNode(true) as HTMLElement, this.eventEmitter);
+        this.basketElement.content = basketItem.render({
+          id: cardItem.id,
+          title: cardItem.title,
+          price: cardItem.price,
+          index: this.state.addedCards.indexOf(cardItem)
+        });
       });
       this.basketElement.total = `${this.state.getTotalPrice()}`;
-      this.modal.content = this.basketElement.render();
-      this.modal.openModal();
+      this.modal.content = this.basketElement.render({});
   }
 
-  deleteItem(basketItem: IBasketItem) {
+  openBasket() {
+    this.renderItems();
+    this.modal.openModal();
+  }
+
+
+  deleteItem(basketItem: IBasketItem<BasketItem>) {
     this.state.addedCards = this.state.addedCards.filter((item) => item.id !== basketItem.itemId);
     this.basketElement.total = `${this.state.getTotalPrice()}`;
-    this.basketPage.basketCounter = `${this.state.addedCards.length}`;
-    this.openBasket();
+    this.basketPage.counter = `${this.state.addedCards.length}`;
   }
 
   openForm() {
-    this.modal.content = this.form.render();
+    this.modal.content = this.form.render({});
   }
 
   handlePaymentOption(data: {value: HTMLElement, button: HTMLButtonElement}) {
     const paymentMethod = data.value.getAttribute('name');
     if (paymentMethod === 'card') {
-      this.userOptions._paymentMethod = 'card';
+      this.userOptions.paymentMethod = 'card';
     } else {
-      this.userOptions._paymentMethod = 'cash';
+      this.userOptions.paymentMethod = 'cash';
     }
     this.toggleButtonForm(data.button);
   }
@@ -159,12 +186,12 @@ export class Presenter {
       data.value.setCustomValidity('');
       data.error.textContent = '';
     }
-    this.userOptions._addres = data.value.value;
+    this.userOptions.address = data.value.value;
     this.toggleButtonForm(data.button);
   }
 
   toggleButtonForm(button: HTMLButtonElement) {
-    if (this.userOptions._addres !== '' && this.userOptions._paymentMethod !== null) {
+    if (this.userOptions.userAddress !== '' && this.userOptions.userPaymentMethod !== null) {
       button.disabled = false;
     } else {
       button.disabled = true;
@@ -172,7 +199,7 @@ export class Presenter {
   }
   
   submitAddressForm() {
-    this.modal.content = this.formContacts.render();
+    this.modal.content = this.formContacts.render({});
   }
 
   handleEmailInput(data: {value: HTMLInputElement, button: HTMLButtonElement, error: HTMLElement}) {
@@ -183,7 +210,7 @@ export class Presenter {
       data.value.setCustomValidity('');
       data.error.textContent = '';
     }
-    this.userOptions._email = data.value.value;
+    this.userOptions.email = data.value.value;
     this.toggleButtonFormContacts(data.button);
   }
 
@@ -196,12 +223,12 @@ export class Presenter {
       data.error.textContent = '';
     }
 
-    this.userOptions._phone = data.value.value;
+    this.userOptions.phone = data.value.value;
     this.toggleButtonFormContacts(data.button);
   }
 
   toggleButtonFormContacts(button: HTMLButtonElement) {
-    if (this.userOptions._email !== '' && this.userOptions._phone !== '') {
+    if (this.userOptions.userEmail !== '' && this.userOptions.userPhone !== '') {
       button.disabled = false;
     } else {
       button.disabled = true;
@@ -209,18 +236,17 @@ export class Presenter {
   }
 
   openSuccsess() {
-    this.postOrder();
     this.resetBasket();
     this.form.resetFields();
-    this.modal.content = this.succsess.render();
-    const textSuccsess = `Списано ${this.basketElement.basketTotalPrice.textContent}`;
+    this.modal.content = this.succsess.render({});
+    const textSuccsess = this.basketElement.basketTotalPrice.textContent;
     this.succsess.setDescription(textSuccsess);
   }
 
   resetBasket() {
     this.state.addedCards = [];
-    this.modal.content = this.basketElement.render();
-    this.basketPage.basketCounter = '0';
+    this.modal.content = this.basketElement.render({});
+    this.basketPage.counter = `${this.state.addedCards.length}`;
     this.userOptions.resetFields();
     this.formContacts.resetFields();
   }
@@ -231,14 +257,17 @@ export class Presenter {
       addedCardsId.push(card.id);
     });
     const userOrder = {
-      payment: this.userOptions._paymentMethod,
-      email: this.userOptions._email,
-      phone: this.userOptions._phone,
-      address: this.userOptions._addres,
+      payment: this.userOptions.userPaymentMethod,
+      email: this.userOptions.userEmail,
+      phone: this.userOptions.userPhone,
+      address: this.userOptions.userAddress,
       total: this.state.getTotalPrice(),
       items: addedCardsId
-    }
-    const api = new Api(API_URL);
-    api.post('/order', userOrder);
+    };
+    this.api.post('/order', userOrder)
+    .then(() => this.openSuccsess())
+    .catch((err) => {
+      console.log(err);
+    });
   }
 }
